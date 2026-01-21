@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Modal, StyleSheet, View } from "react-native";
+import { Modal, Platform, StyleSheet, View } from "react-native";
 import { useTheme } from "../../styles/ThemeContext";
 import { toBangla } from "../../utils/bangla";
 import { Button } from "../ui/Button";
@@ -35,14 +35,14 @@ export const PauseModal: React.FC<PauseModalProps> = ({
       <View style={styles.overlay}>
         <View style={styles.card}>
           <View style={styles.iconContainer}>
-            <Ionicons name="pause" size={32} color={theme.colors.primary} />
+            <Ionicons name="pause" size={32} color="#FFF" />
           </View>
 
           <ThemedText variant="h2" weight="bold" style={styles.title}>
             খেলা থামানো হয়েছে
           </ThemedText>
           <ThemedText variant="body" color={theme.colors.textSecondary}>
-            একটু বিরতি নিন
+            বিরতি নিন এবং পুনরায় শুরু করুন
           </ThemedText>
 
           <View style={styles.timerChip}>
@@ -59,18 +59,21 @@ export const PauseModal: React.FC<PauseModalProps> = ({
           <View style={styles.actions}>
             <Button
               title="পুনরায় শুরু করুন"
+              icon={<Ionicons name="play" size={20} color="#FFF" />}
               onPress={onResume}
               style={styles.fullBtn}
             />
             <Button
               title="আবার শুরু করুন"
               variant="secondary"
+              icon={<Ionicons name="refresh" size={20} color={theme.colors.primaryDark} />}
               onPress={onRestart}
               style={styles.fullBtn}
             />
             <Button
               title="হোম পেজে যান"
               variant="ghost"
+              icon={<Ionicons name="home" size={20} color={theme.colors.textSecondary} />}
               onPress={onHome}
               style={styles.fullBtn}
             />
@@ -97,12 +100,20 @@ const createStyles = (theme: any) =>
       padding: theme.spacing.xl,
       alignItems: "center",
       gap: theme.spacing.md,
+      ...(Platform.OS === "ios"
+        ? {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.25,
+          shadowRadius: 16,
+        }
+        : { elevation: 8 }),
     },
     iconContainer: {
       width: 64,
       height: 64,
       borderRadius: theme.radius.round,
-      backgroundColor: theme.colors.selection,
+      backgroundColor: theme.colors.primary,
       justifyContent: "center",
       alignItems: "center",
     },

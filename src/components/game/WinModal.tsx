@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { Modal, StyleSheet, View } from "react-native";
+import React, { useEffect } from "react";
+import { Modal, Platform, StyleSheet, View } from "react-native";
 import { useTheme } from "../../styles/ThemeContext";
 import { toBangla } from "../../utils/bangla";
+import hapticService from "../../utils/hapticService";
 import { Button } from "../ui/Button";
 import { ThemedText } from "../ui/ThemedText";
 
@@ -24,6 +25,13 @@ export const WinModal: React.FC<WinModalProps> = ({
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
+  // Trigger success haptic when modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      hapticService.success();
+    }
+  }, [visible]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -35,11 +43,11 @@ export const WinModal: React.FC<WinModalProps> = ({
       <View style={styles.overlay}>
         <View style={styles.card}>
           <View style={styles.iconContainer}>
-            <Ionicons name="trophy" size={48} color="#FFD700" />
+            <Ionicons name="ribbon" size={48} color={theme.colors.primary} />
           </View>
 
           <ThemedText variant="h2" weight="bold" style={styles.title}>
-            গেম জিতেছেন!
+            পাজল সম্পন্ন হয়েছে!
           </ThemedText>
           <ThemedText
             variant="body"
@@ -59,7 +67,7 @@ export const WinModal: React.FC<WinModalProps> = ({
             </View>
             <View style={styles.divider} />
             <View style={styles.statItem}>
-              <Ionicons name="warning" size={20} color={theme.colors.error} />
+              <Ionicons name="close-circle" size={20} color={theme.colors.error} />
               <ThemedText variant="caption">ভুল</ThemedText>
               <ThemedText variant="h3" weight="bold">
                 {toBangla(mistakes)}
@@ -77,6 +85,7 @@ export const WinModal: React.FC<WinModalProps> = ({
             <Button
               title="আবার খেলুন"
               variant="secondary"
+              icon={<Ionicons name="refresh" size={20} color={theme.colors.primaryDark} />}
               onPress={onNewGame}
               style={styles.fullBtn}
             />
@@ -116,10 +125,18 @@ const createStyles = (theme: any) =>
       padding: theme.spacing.xl,
       alignItems: "center",
       gap: theme.spacing.md,
+      ...(Platform.OS === "ios"
+        ? {
+          shadowColor: theme.colors.primary,
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+        }
+        : { elevation: 10 }),
     },
     iconContainer: {
-      width: 100,
-      height: 100,
+      width: 80,
+      height: 80,
       borderRadius: theme.radius.round,
       backgroundColor: theme.colors.selection,
       justifyContent: "center",

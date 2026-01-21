@@ -31,13 +31,15 @@ export default function GameScreen() {
   const styles = createStyles(theme);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (status === "playing") {
       interval = setInterval(() => {
         tick();
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [status, tick]);
 
   useEffect(() => {

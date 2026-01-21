@@ -8,12 +8,14 @@ import { ThemedText } from "./ThemedText";
 interface HeaderProps {
   title?: string;
   showBack?: boolean;
+  leftAction?: React.ReactNode;
   rightAction?: React.ReactNode;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   title,
   showBack = false,
+  leftAction,
   rightAction,
 }) => {
   const { theme } = useTheme();
@@ -24,7 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.left}>
-          {showBack && (
+          {showBack ? (
             <TouchableOpacity
               onPress={() => router.back()}
               style={styles.backButton}
@@ -35,6 +37,8 @@ export const Header: React.FC<HeaderProps> = ({
                 color={theme.colors.text}
               />
             </TouchableOpacity>
+          ) : (
+            leftAction
           )}
         </View>
 

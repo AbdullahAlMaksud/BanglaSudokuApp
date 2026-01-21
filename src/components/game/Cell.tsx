@@ -1,8 +1,9 @@
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Cell as CellType } from "../../features/sudoku/types";
 import { useTheme } from "../../styles/ThemeContext";
 import { toBangla } from "../../utils/bangla";
+import hapticService from "../../utils/hapticService";
 import { ThemedText } from "../ui/ThemedText";
 
 interface CellProps {
@@ -21,6 +22,11 @@ export const Cell: React.FC<CellProps> = ({
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
+  const handlePress = () => {
+    hapticService.lightTap();
+    onPress();
+  };
+
   const getBackgroundColor = () => {
     if (isSelected) return theme.colors.primary;
     if (cell.isValid === false) return theme.colors.error + "40";
@@ -36,20 +42,42 @@ export const Cell: React.FC<CellProps> = ({
     return theme.colors.primary;
   };
 
+  const getCellStyle = (pressed: boolean) => {
+    const baseStyle: any = {
+      ...styles.container,
+      backgroundColor: getBackgroundColor(),
+      transform: [{ scale: pressed ? 0.95 : 1 }],
+    };
+
+    // Add glow effect for selected cell
+    if (isSelected) {
+      if (Platform.OS === "ios") {
+        baseStyle.shadowColor = theme.colors.primary;
+        baseStyle.shadowOffset = { width: 0, height: 0 };
+        baseStyle.shadowOpacity = 0.5;
+        baseStyle.shadowRadius = 8;
+      } else {
+        baseStyle.elevation = 6;
+      }
+    }
+
+    // Border styles for grid
+    if ((cell.col + 1) % 3 === 0 && cell.col !== 8) {
+      baseStyle.borderRightWidth = 2;
+      baseStyle.borderRightColor = theme.colors.text;
+    }
+    if ((cell.row + 1) % 3 === 0 && cell.row !== 8) {
+      baseStyle.borderBottomWidth = 2;
+      baseStyle.borderBottomColor = theme.colors.text;
+    }
+
+    return baseStyle;
+  };
+
   return (
-    <TouchableOpacity
-      style={[
-        styles.container,
-        { backgroundColor: getBackgroundColor() },
-        (cell.col + 1) % 3 === 0 && cell.col !== 8
-          ? { borderRightWidth: 2, borderRightColor: theme.colors.text }
-          : {},
-        (cell.row + 1) % 3 === 0 && cell.row !== 8
-          ? { borderBottomWidth: 2, borderBottomColor: theme.colors.text }
-          : {},
-      ]}
-      onPress={onPress}
-      activeOpacity={0.9}
+    <Pressable
+      style={({ pressed }) => getCellStyle(pressed)}
+      onPress={handlePress}
     >
       {cell.value !== null ? (
         <ThemedText
@@ -79,7 +107,7 @@ export const Cell: React.FC<CellProps> = ({
           ))}
         </View>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 

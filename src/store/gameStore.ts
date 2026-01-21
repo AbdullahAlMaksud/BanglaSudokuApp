@@ -9,6 +9,8 @@ import {
   Grid,
 } from "../features/sudoku/types";
 import { isGameWon } from "../features/sudoku/validator";
+import hapticService from "../utils/hapticService";
+import soundService from "../utils/soundService";
 import { useStatsStore } from "./statsStore";
 
 interface GameActions {
@@ -21,9 +23,9 @@ interface GameActions {
   hint: () => void;
   pauseGame: () => void;
   resumeGame: () => void;
-  resetGame: () => void; // Restart same board
+  resetGame: () => void;
   quitGame: () => void;
-  tick: () => void; // Timer tick
+  tick: () => void;
   setNoteMode: (active: boolean) => void;
 }
 
@@ -54,6 +56,11 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
 
       startGame: (difficulty) => {
         const { initial, solved } = generateSudoku(difficulty);
+
+        // Play start sound & haptic
+        soundService.playSounds.start();
+        hapticService.success();
+
         set({
           ...INITIAL_STATE,
           grid: JSON.parse(JSON.stringify(initial)),
@@ -61,7 +68,7 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
           solution: solved,
           difficulty,
           status: "playing",
-          history: [JSON.parse(JSON.stringify(initial))], // Initial state in history
+          history: [JSON.parse(JSON.stringify(initial))],
           historyIndex: 0,
         });
       },
@@ -70,7 +77,12 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
 
       setNoteMode: (active) => set({ isNoteMode: active }),
 
-      toggleNote: () => set((state) => ({ isNoteMode: !state.isNoteMode })),
+      toggleNote: () => {
+        // Play note toggle sound & haptic
+        soundService.playSounds.note();
+        hapticService.selection();
+        set((state) => ({ isNoteMode: !state.isNoteMode }));
+      },
 
       toggleErase: () => {
         const { grid, selectedCell, history, historyIndex, initialGrid } =
@@ -78,15 +90,16 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
         if (!selectedCell) return;
         const { row, col } = selectedCell;
 
-        // Cannot erase fixed cells
         if (initialGrid[row][col].isFixed) return;
+
+        // Light haptic for erase
+        hapticService.lightTap();
 
         const newGrid = JSON.parse(JSON.stringify(grid));
         newGrid[row][col].value = null;
         newGrid[row][col].notes = [];
         newGrid[row][col].isValid = true;
 
-        // Add to history
         const newHistory = history.slice(0, historyIndex + 1);
         newHistory.push(JSON.parse(JSON.stringify(newGrid)));
 
@@ -124,33 +137,29 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
           } else {
             cell.notes.push(num);
           }
+          // Light tap for note
+          soundService.playSounds.tap();
+          hapticService.lightTap();
         } else {
-          // Check correctness directly (instant feedback style commonly used in apps) or just validity?
-          // User requirement: "Highlight Invalid conflicts".
-          // Implementation: We set the value. Validation happens visually or we can flag it here.
-          // Let's set value. If it conflicts with row/col/box, marks invalid.
-          // Also check against solution for "Mistakes" count (common in Sudoku apps).
-
           const isCorrect = solution[row][col].value === num;
 
           cell.value = num;
-          cell.notes = []; // Clear notes on input
+          cell.notes = [];
 
           if (!isCorrect) {
             set({ mistakes: mistakes + 1 });
-            cell.isValid = false; // Mark as error visually
+            cell.isValid = false;
+            // Error feedback
+            soundService.playSounds.error();
+            hapticService.error();
           } else {
             cell.isValid = true;
-          }
-
-          // Remove notes in row/col/box if correct number placed
-          if (isCorrect) {
-            // Should we remove notes? Yes, usually.
-            // Simple implementation for now.
+            // Correct feedback
+            soundService.playSounds.correct();
+            hapticService.success();
           }
         }
 
-        // Add to history
         const newHistory = history.slice(0, historyIndex + 1);
         newHistory.push(JSON.parse(JSON.stringify(newGrid)));
 
@@ -163,6 +172,9 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
         // Check Win
         if (!isNoteMode && isGameWon(newGrid, solution)) {
           set({ status: "won" });
+          // Win celebration feedback
+          soundService.playSounds.win();
+          hapticService.success();
           // Update Stats Store
           useStatsStore.getState().addGameResult({
             difficulty: get().difficulty,
@@ -176,6 +188,9 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
       undo: () => {
         const { history, historyIndex } = get();
         if (historyIndex > 0) {
+          // Undo feedback
+          soundService.playSounds.undo();
+          hapticService.warning();
           set({
             grid: JSON.parse(JSON.stringify(history[historyIndex - 1])),
             historyIndex: historyIndex - 1,
@@ -188,17 +203,20 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
         if (status !== "playing" || !selectedCell) return;
         const { row, col } = selectedCell;
 
-        if (grid[row][col].value !== null) return; // Already filled
+        if (grid[row][col].value !== null) return;
+
+        // Hint feedback
+        soundService.playSounds.hint();
+        hapticService.warning();
 
         const newGrid = JSON.parse(JSON.stringify(grid));
         newGrid[row][col].value = solution[row][col].value;
-        newGrid[row][col].isValid = true; // Correct by definition
-        newGrid[row][col].isFixed = true; // Treat hinted cell as fixed/correct
+        newGrid[row][col].isValid = true;
+        newGrid[row][col].isFixed = true;
 
         set({
           grid: newGrid,
           hintsUsed: hintsUsed + 1,
-          // No history for hints? Or yes? user preference. Let's add to history for consistency.
         });
       },
 
@@ -207,6 +225,9 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
 
       resetGame: () => {
         const { initialGrid } = get();
+        // Start feedback
+        soundService.playSounds.start();
+        hapticService.mediumTap();
         set({
           grid: JSON.parse(JSON.stringify(initialGrid)),
           status: "playing",
@@ -230,7 +251,6 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
       name: "sudoku-game-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        // Persist only necessary state
         grid: state.grid,
         initialGrid: state.initialGrid,
         solution: state.solution,

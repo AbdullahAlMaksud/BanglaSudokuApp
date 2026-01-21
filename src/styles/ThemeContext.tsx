@@ -8,7 +8,7 @@ import { useColorScheme } from "react-native";
 import { useSettingsStore } from "../store/settingsStore";
 import { darkTheme, lightTheme } from "./themes";
 
-export type AppTheme = typeof lightTheme;
+export type AppTheme = typeof lightTheme | typeof darkTheme;
 
 interface ThemeContextValue {
   theme: AppTheme;

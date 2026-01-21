@@ -12,6 +12,7 @@ function RootLayoutContent() {
       style={{
         flex: 1,
         backgroundColor: theme.colors.background,
+        paddingTop: 50,
       }}
     >
       <StatusBar style={themeName === "dark" ? "light" : "dark"} />

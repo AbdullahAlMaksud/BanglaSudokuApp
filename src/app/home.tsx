@@ -1,7 +1,13 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Header } from "../components/ui/Header";
@@ -9,21 +15,56 @@ import { ThemedText } from "../components/ui/ThemedText";
 import { Difficulty } from "../features/sudoku/types";
 import { useGameStore } from "../store/gameStore";
 import { useTheme } from "../styles/ThemeContext";
+import hapticService from "../utils/hapticService";
 
 export default function HomeScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const { startGame, status } = useGameStore();
+  const { startGame, status, timeElapsed, difficulty } = useGameStore();
   const styles = createStyles(theme);
 
-  const handleNewGame = (difficulty: Difficulty) => {
-    startGame(difficulty);
+  const handleNewGame = (diff: Difficulty) => {
+    startGame(diff);
     router.push("/game");
+  };
+
+  const handleContinue = () => {
+    hapticService.mediumTap();
+    router.push("/game");
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const getDifficultyLabel = (diff: string) => {
+    switch (diff) {
+      case "Easy":
+        return "সহজ";
+      case "Medium":
+        return "মাঝারি";
+      case "Hard":
+        return "কঠিন";
+      case "Expert":
+        return "বিশেষজ্ঞ";
+      default:
+        return diff;
+    }
   };
 
   return (
     <View style={styles.container}>
       <Header
+        leftAction={
+          <Ionicons
+            name="grid-outline"
+            size={24}
+            color={theme.colors.text}
+            onPress={() => router.push("/how-to-play")}
+          />
+        }
         rightAction={
           <Ionicons
             name="settings-outline"
@@ -35,28 +76,33 @@ export default function HomeScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <ThemedText variant="h1" weight="bold" style={styles.title}>
-          সুডোকু
-        </ThemedText>
+        {/* Play Button */}
+        <Button
+          title="খেলুন"
+          icon={<Ionicons name="play" size={24} color="#FFF" />}
+          onPress={() => handleNewGame("Medium")}
+          size="lg"
+          style={styles.mainPlayButton}
+        />
 
-        {status === "playing" || status === "paused" ? (
-          <Card style={styles.resumeCard} padding="lg">
-            <View style={styles.resumeInfo}>
-              <ThemedText variant="h3" weight="bold">
-                চালিয়ে যান
-              </ThemedText>
-              <ThemedText variant="caption">পূর্বের গেম</ThemedText>
-            </View>
-            <Button
-              title=""
-              icon={<Ionicons name="play" size={20} color="#FFF" />}
-              onPress={() => router.push("/game")}
-              style={styles.playButton}
-            />
+        {/* Resume Card */}
+        {(status === "playing" || status === "paused") && (
+          <Card style={styles.resumeCard} padding="md">
+            <Pressable style={styles.resumeContent} onPress={handleContinue}>
+              <View style={styles.resumeInfo}>
+                <ThemedText variant="body" weight="bold">
+                  চালিয়ে যান
+                </ThemedText>
+                <ThemedText variant="caption" color={theme.colors.textSecondary}>
+                  {getDifficultyLabel(difficulty)} • {formatTime(timeElapsed)}
+                </ThemedText>
+              </View>
+              <Ionicons name="play" size={24} color={theme.colors.primary} />
+            </Pressable>
           </Card>
-        ) : null}
+        )}
 
-        <ThemedText variant="h3" style={styles.sectionTitle}>
+        <ThemedText variant="h3" weight="bold" style={styles.sectionTitle}>
           অসুবিধা নির্বাচন করুন
         </ThemedText>
 
@@ -65,6 +111,7 @@ export default function HomeScreen() {
             label="সহজ"
             icon="feather"
             color="#4CAF50"
+            bgColor="#E8F5E9"
             onPress={() => handleNewGame("Easy")}
             theme={theme}
           />
@@ -72,13 +119,15 @@ export default function HomeScreen() {
             label="মাঝারি"
             icon="scale-balance"
             color="#FF9800"
+            bgColor="#FFF3E0"
             onPress={() => handleNewGame("Medium")}
             theme={theme}
           />
           <GridButton
             label="কঠিন"
-            icon="fire"
+            icon="cog"
             color="#F44336"
+            bgColor="#FFEBEE"
             onPress={() => handleNewGame("Hard")}
             theme={theme}
           />
@@ -86,13 +135,15 @@ export default function HomeScreen() {
             label="বিশেষজ্ঞ"
             icon="lightning-bolt"
             color="#9C27B0"
+            bgColor="#F3E5F5"
             onPress={() => handleNewGame("Expert")}
             theme={theme}
           />
         </View>
 
+        {/* Daily Challenge Promo */}
         <Card style={styles.promoCard} variant="elevated">
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.push("/stats")}
             style={styles.promoContent}
           >
@@ -101,14 +152,14 @@ export default function HomeScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <ThemedText variant="body" weight="bold" color="#FFF">
-                প্রতিদিন খেলুন
+                দৈনিক চ্যালেঞ্জ
               </ThemedText>
               <ThemedText variant="caption" color="rgba(255,255,255,0.8)">
-                এবং ট্রফি জিতুন
+                ৩টি ট্রফি জিতুন
               </ThemedText>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#FFF" />
-          </TouchableOpacity>
+          </Pressable>
         </Card>
       </ScrollView>
 
@@ -117,7 +168,7 @@ export default function HomeScreen() {
           name="home"
           label="হোম"
           isActive
-          onPress={() => {}}
+          onPress={() => { }}
           theme={theme}
         />
         <NavIcon
@@ -129,7 +180,7 @@ export default function HomeScreen() {
         <NavIcon
           name="account"
           label="প্রোফাইল"
-          onPress={() => {}}
+          onPress={() => { }}
           theme={theme}
         />
       </View>
@@ -141,25 +192,53 @@ const GridButton = ({
   label,
   icon,
   color,
+  bgColor,
   onPress,
   theme,
 }: {
   label: string;
   icon: any;
   color: string;
+  bgColor: string;
   onPress: () => void;
   theme: any;
 }) => {
   const styles = createStyles(theme);
+
+  const handlePress = () => {
+    hapticService.mediumTap();
+    onPress();
+  };
+
+  const getButtonStyle = (pressed: boolean) => {
+    const baseStyle: any = {
+      ...styles.gridCard,
+      backgroundColor: bgColor,
+      transform: [{ scale: pressed ? 0.96 : 1 }],
+    };
+
+    if (Platform.OS === "ios") {
+      baseStyle.shadowColor = color;
+      baseStyle.shadowOffset = { width: 0, height: pressed ? 2 : 4 };
+      baseStyle.shadowOpacity = pressed ? 0.15 : 0.25;
+      baseStyle.shadowRadius = pressed ? 4 : 8;
+    } else {
+      baseStyle.elevation = pressed ? 2 : 4;
+    }
+
+    return baseStyle;
+  };
+
   return (
-    <Card style={styles.gridCard} padding="md">
-      <TouchableOpacity style={styles.gridBtnTouch} onPress={onPress}>
-        <MaterialCommunityIcons name={icon} size={32} color={color} />
-        <ThemedText variant="body" weight="bold" style={{ marginTop: 8 }}>
-          {label}
-        </ThemedText>
-      </TouchableOpacity>
-    </Card>
+    <Pressable onPress={handlePress} style={({ pressed }) => getButtonStyle(pressed)}>
+      <View style={[styles.gridIconContainer, { backgroundColor: bgColor }]}>
+        <MaterialCommunityIcons name={icon} size={28} color={color} />
+      </View>
+      <ThemedText variant="body" weight="bold" style={{ marginTop: 8 }}>
+        {label}
+      </ThemedText>
+      <View style={[styles.difficultyBar, { backgroundColor: color }]} />
+    </Pressable>
   );
 };
 
@@ -176,8 +255,13 @@ const NavIcon = ({
   onPress: () => void;
   theme: any;
 }) => {
+  const handlePress = () => {
+    hapticService.lightTap();
+    onPress();
+  };
+
   return (
-    <TouchableOpacity style={{ alignItems: "center" }} onPress={onPress}>
+    <Pressable style={{ alignItems: "center" }} onPress={handlePress}>
       <MaterialCommunityIcons
         name={name}
         size={24}
@@ -189,7 +273,7 @@ const NavIcon = ({
       >
         {label}
       </ThemedText>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
@@ -203,28 +287,23 @@ const createStyles = (theme: any) =>
       padding: theme.spacing.lg,
       paddingBottom: 100,
     },
-    title: {
-      color: theme.colors.primary,
-      marginBottom: theme.spacing.xl,
+    mainPlayButton: {
+      marginBottom: theme.spacing.lg,
     },
     sectionTitle: {
       marginBottom: theme.spacing.md,
-      marginTop: theme.spacing.lg,
+      marginTop: theme.spacing.md,
     },
     resumeCard: {
+      marginBottom: theme.spacing.md,
+    },
+    resumeContent: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: theme.spacing.lg,
     },
     resumeInfo: {
-      gap: 4,
-    },
-    playButton: {
-      borderRadius: theme.radius.round,
-      width: 48,
-      height: 48,
-      paddingHorizontal: 0,
+      gap: 2,
     },
     grid: {
       flexDirection: "row",
@@ -233,17 +312,28 @@ const createStyles = (theme: any) =>
     },
     gridCard: {
       width: "47%",
-      aspectRatio: 1.4,
-      padding: 0,
-      overflow: "hidden",
+      aspectRatio: 1.3,
+      borderRadius: theme.radius.lg,
+      padding: theme.spacing.md,
+      alignItems: "center",
+      justifyContent: "center",
     },
-    gridBtnTouch: {
-      flex: 1,
+    gridIconContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: theme.radius.md,
       justifyContent: "center",
       alignItems: "center",
     },
+    difficultyBar: {
+      position: "absolute",
+      bottom: 12,
+      width: "40%",
+      height: 3,
+      borderRadius: 2,
+    },
     promoCard: {
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.primaryDark,
       marginTop: theme.spacing.xl,
       padding: 0,
     },

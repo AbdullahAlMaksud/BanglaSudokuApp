@@ -1,11 +1,13 @@
 import React from "react";
 import {
   ActivityIndicator,
+  Platform,
+  Pressable,
   TextStyle,
-  TouchableOpacity,
   ViewStyle,
 } from "react-native";
 import { useTheme } from "../../styles/ThemeContext";
+import hapticService from "../../utils/hapticService";
 import { ThemedText } from "./ThemedText";
 
 interface ButtonProps {
@@ -18,6 +20,7 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   icon?: React.ReactNode;
+  withHaptic?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -30,16 +33,19 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
   icon,
+  withHaptic = true,
 }) => {
   const { theme } = useTheme();
 
-  const getContainerStyle = (): ViewStyle => ({
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: theme.radius.md,
-    opacity: disabled ? 0.6 : 1,
-    backgroundColor: (() => {
+  const handlePress = () => {
+    if (withHaptic) {
+      hapticService.mediumTap();
+    }
+    onPress();
+  };
+
+  const getContainerStyle = (pressed: boolean): ViewStyle => {
+    const baseColor = (() => {
       switch (variant) {
         case "primary":
           return theme.colors.primary;
@@ -52,12 +58,37 @@ export const Button: React.FC<ButtonProps> = ({
         default:
           return theme.colors.primary;
       }
-    })(),
-    borderWidth: variant === "outline" ? 2 : 0,
-    borderColor: variant === "outline" ? theme.colors.primary : "transparent",
-    paddingVertical: size === "sm" ? 8 : size === "lg" ? 16 : 12,
-    paddingHorizontal: size === "sm" ? 16 : size === "lg" ? 32 : 24,
-  });
+    })();
+
+    const baseStyle: ViewStyle = {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: theme.radius.md,
+      opacity: disabled ? 0.6 : 1,
+      backgroundColor: baseColor,
+      borderWidth: variant === "outline" ? 2 : 0,
+      borderColor: variant === "outline" ? theme.colors.primary : "transparent",
+      paddingVertical: size === "sm" ? 8 : size === "lg" ? 16 : 12,
+      paddingHorizontal: size === "sm" ? 16 : size === "lg" ? 32 : 24,
+      transform: [{ scale: pressed && !disabled ? 0.97 : 1 }],
+    };
+
+    // Add glow/shadow for primary variant
+    if (variant === "primary" && !disabled) {
+      if (Platform.OS === "ios") {
+        baseStyle.shadowColor = theme.colors.primary;
+        baseStyle.shadowOffset = { width: 0, height: 4 };
+        baseStyle.shadowOpacity = pressed ? 0.2 : 0.35;
+        baseStyle.shadowRadius = pressed ? 6 : 10;
+      } else {
+        // @ts-ignore - elevation is valid for Android
+        baseStyle.elevation = pressed ? 2 : 6;
+      }
+    }
+
+    return baseStyle;
+  };
 
   const getTextStyle = (): TextStyle => ({
     color: (() => {
@@ -83,11 +114,10 @@ export const Button: React.FC<ButtonProps> = ({
   });
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
+    <Pressable
+      onPress={handlePress}
       disabled={disabled || loading}
-      style={[getContainerStyle(), style]}
-      activeOpacity={0.8}
+      style={({ pressed }) => [getContainerStyle(pressed), style]}
     >
       {loading ? (
         <ActivityIndicator
@@ -108,6 +138,6 @@ export const Button: React.FC<ButtonProps> = ({
           </ThemedText>
         </>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 };

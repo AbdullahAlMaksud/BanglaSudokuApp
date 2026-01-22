@@ -1,50 +1,73 @@
-# Welcome to your Expo app 👋
+# Bangla Sudoku
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern, interactive Sudoku game application built with React Native and Expo. Enjoy playing Sudoku in Bengali!
 
-## Get started
+## Features
 
-1. Install dependencies
+-   **Interactive Gameplay**: Smooth and responsive Sudoku grid.
+-   **Bangla Language Support**: tailored for Bengali speaking users.
+-   **Multiple Difficulty Levels**: Challenge yourself with different levels.
+-   **Offline Support**: Play anytime, anywhere without an internet connection.
+-   **Clean UI**: Minimalist and user-friendly interface.
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+-   **Framework**: [React Native](https://reactnative.dev/) with [Expo](https://expo.dev/)
+-   **Language**: [TypeScript](https://www.typescriptlang.org/)
+-   **State Management**: [Zustand](https://github.com/pmndrs/zustand)
+-   **Navigation**: [Expo Router](https://docs.expo.dev/router/introduction/)
+-   **Styling**: Nativewind / Tailwind CSS (inferred)
+-   **Date Handling**: date-fns
 
-   ```bash
-   npx expo start
-   ```
+## Get Started
 
-In the output, you'll find options to open the app in a
+Follow these steps to set up the project locally.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Prerequisites
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+-   Node.js (LTS version recommended)
+-   npm or yarn or bun
 
-## Get a fresh project
+### Installation
 
-When you're ready, run:
+1.  Clone the repository:
+
+    ```bash
+    git clone https://github.com/AbdullahAlMaksud/BanglaSudokuApp.git
+    cd BanglaSudokuApp
+    ```
+
+2.  Install dependencies:
+
+    ```bash
+    npm install
+    # or
+    bun install
+    ```
+
+### Running the App
+
+Start the development server:
 
 ```bash
-npm run reset-project
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+-   **Android**: Press `a` in the terminal to open in Android Emulator or connected device.
+-   **iOS**: Press `i` in the terminal to open in iOS Simulator.
+-   **Web**: Press `w` in the terminal to open in Web Browser.
 
-## Learn more
+## Scripts
 
-To learn more about developing your project with Expo, look at the following resources:
+-   `npm start`: Start the Expo development server.
+-   `npm run android`: Run on Android device/emulator.
+-   `npm run ios`: Run on iOS simulator.
+-   `npm run reset-project`: Reset the project to a fresh state (use with caution).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Contributing
 
-## Join the community
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-Join our community of developers creating universal apps.
+## License
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+This project is licensed under the MIT License.

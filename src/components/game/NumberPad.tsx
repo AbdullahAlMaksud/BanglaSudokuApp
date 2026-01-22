@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { useGameStore } from "../../store/gameStore";
@@ -6,31 +7,65 @@ import { toBangla } from "../../utils/bangla";
 import hapticService from "../../utils/hapticService";
 import { ThemedText } from "../ui/ThemedText";
 
-export const NumberPad: React.FC = () => {
+interface NumberPadProps {
+  inputMode: "numpad" | "single";
+}
+
+export const NumberPad: React.FC<NumberPadProps> = ({ inputMode }) => {
   const { theme } = useTheme();
-  const { inputNumber } = useGameStore();
+  const { inputNumber, selectedCell, grid, selectedNumber, setSelectedNumber } = useGameStore();
   const styles = createStyles(theme);
+  const colors = theme.colors as any;
 
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
   const handlePress = (num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9) => {
     hapticService.mediumTap();
-    inputNumber(num);
+
+    if (inputMode === "single") {
+      // In single mode, toggle the selected number
+      if (selectedNumber === num) {
+        setSelectedNumber(null); // Deselect if same number
+      } else {
+        setSelectedNumber(num);
+      }
+    } else {
+      // In numpad mode, directly input the number
+      inputNumber(num);
+    }
   };
 
-  const getKeyStyle = (pressed: boolean) => {
+  const handleErase = () => {
+    hapticService.lightTap();
+    if (inputMode === "single") {
+      // In single mode, set selectedNumber to null (erase mode)
+      setSelectedNumber(null);
+    }
+    useGameStore.getState().toggleErase();
+  };
+
+  // Get selected cell value to highlight the matching number (numpad mode)
+  // In single mode, highlight the selectedNumber
+  const highlightedValue = inputMode === "single"
+    ? selectedNumber
+    : (selectedCell ? grid[selectedCell.row]?.[selectedCell.col]?.value : null);
+
+  const getKeyStyle = (num: number, pressed: boolean) => {
+    const isSelected = highlightedValue === num;
+    const bgColor = colors.surfaceLight || colors.surface;
     const baseStyle: any = {
       ...styles.key,
+      backgroundColor: isSelected ? colors.primary : bgColor,
       transform: [{ scale: pressed ? 0.92 : 1 }],
     };
 
-    if (Platform.OS === "ios") {
-      baseStyle.shadowColor = theme.colors.primary;
-      baseStyle.shadowOffset = { width: 0, height: pressed ? 1 : 3 };
-      baseStyle.shadowOpacity = pressed ? 0.1 : 0.15;
-      baseStyle.shadowRadius = pressed ? 2 : 6;
-    } else {
-      baseStyle.elevation = pressed ? 1 : 4;
+    if (Platform.OS === "ios" && !isSelected) {
+      baseStyle.shadowColor = "#000";
+      baseStyle.shadowOffset = { width: 0, height: 2 };
+      baseStyle.shadowOpacity = 0.1;
+      baseStyle.shadowRadius = 4;
+    } else if (!isSelected) {
+      baseStyle.elevation = 2;
     }
 
     return baseStyle;
@@ -38,17 +73,54 @@ export const NumberPad: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {numbers.map((num) => (
+      {/* First Row: 1-5 */}
+      <View style={styles.row}>
+        {numbers.slice(0, 5).map((num) => (
+          <Pressable
+            key={num}
+            style={({ pressed }) => getKeyStyle(num, pressed)}
+            onPress={() => handlePress(num)}
+          >
+            <ThemedText
+              variant="h2"
+              weight="bold"
+              color={highlightedValue === num ? "#FFF" : colors.text}
+            >
+              {toBangla(num)}
+            </ThemedText>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Second Row: 6-9 + Erase */}
+      <View style={styles.row}>
+        {numbers.slice(5).map((num) => (
+          <Pressable
+            key={num}
+            style={({ pressed }) => getKeyStyle(num, pressed)}
+            onPress={() => handlePress(num)}
+          >
+            <ThemedText
+              variant="h2"
+              weight="bold"
+              color={highlightedValue === num ? "#FFF" : colors.text}
+            >
+              {toBangla(num)}
+            </ThemedText>
+          </Pressable>
+        ))}
+        {/* Erase Button */}
         <Pressable
-          key={num}
-          style={({ pressed }) => getKeyStyle(pressed)}
-          onPress={() => handlePress(num)}
+          style={({ pressed }) => [
+            styles.key,
+            styles.eraseKey,
+            pressed && { transform: [{ scale: 0.92 }] },
+          ]}
+          onPress={handleErase}
         >
-          <ThemedText variant="h2" color={theme.colors.primary} weight="bold">
-            {toBangla(num)}
-          </ThemedText>
+          <Ionicons name="close" size={28} color={colors.text} />
         </Pressable>
-      ))}
+      </View>
     </View>
   );
 };
@@ -56,18 +128,22 @@ export const NumberPad: React.FC = () => {
 const createStyles = (theme: any) =>
   StyleSheet.create({
     container: {
+      gap: 12,
+      paddingHorizontal: 8,
+    },
+    row: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "space-between",
-      gap: theme.spacing.sm,
-      marginTop: theme.spacing.lg,
+      justifyContent: "center",
+      gap: 10,
     },
     key: {
-      width: "18%",
-      aspectRatio: 1,
-      backgroundColor: theme.colors.surface,
-      borderRadius: theme.radius.md,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
       justifyContent: "center",
       alignItems: "center",
+    },
+    eraseKey: {
+      backgroundColor: theme.colors.surfaceLight || theme.colors.surface,
     },
   });

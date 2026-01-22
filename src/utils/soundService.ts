@@ -6,19 +6,19 @@ import { Sound } from "expo-av/build/Audio";
  * Manages sound playback for the Sudoku game
  */
 
-// Sound file mapping - update paths when files are added
+// Sound file mapping
 const SOUND_FILES = {
-    tap: null, // require("../assets/sounds/tap.mp3"),
-    correct: null, // require("../assets/sounds/correct.mp3"),
-    error: null, // require("../assets/sounds/error.mp3"),
-    select: null, // require("../assets/sounds/select.mp3"),
-    win: null, // require("../assets/sounds/win.mp3"),
-    button: null, // require("../assets/sounds/button.mp3"),
-    undo: null, // require("../assets/sounds/undo.mp3"),
-    hint: null, // require("../assets/sounds/hint.mp3"),
-    start: null, // require("../assets/sounds/start.mp3"),
-    note: null, // require("../assets/sounds/note.mp3"),
-} as const;
+    tap: require("../assets/sounds/tap.mp3"),
+    correct: require("../assets/sounds/correct.mp3"),
+    error: require("../assets/sounds/error.mp3"),
+    select: require("../assets/sounds/select.mp3"),
+    win: require("../assets/sounds/win.mp3"),
+    button: require("../assets/sounds/button.mp3"),
+    undo: require("../assets/sounds/undo.mp3"),
+    hint: require("../assets/sounds/hint.mp3"),
+    start: require("../assets/sounds/start.mp3"),
+    note: require("../assets/sounds/note.mp3"),
+};
 
 export type SoundName = keyof typeof SOUND_FILES;
 

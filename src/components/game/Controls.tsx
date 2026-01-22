@@ -1,14 +1,15 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useGameStore } from "../../store/gameStore";
 import { useTheme } from "../../styles/ThemeContext";
 import hapticService from "../../utils/hapticService";
-import { ThemedText } from "../ui/ThemedText";
+import { GameSettingsModal } from "./GameSettingsModal";
 
 export const Controls: React.FC = () => {
   const { theme } = useTheme();
-  const { undo, toggleErase, toggleNote, hint, isNoteMode } = useGameStore();
+  const { undo, toggleNote, hint, isNoteMode } = useGameStore();
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
   const styles = createStyles(theme);
 
   const handleUndo = () => {
@@ -16,9 +17,9 @@ export const Controls: React.FC = () => {
     undo();
   };
 
-  const handleErase = () => {
-    hapticService.lightTap();
-    toggleErase();
+  const handleReset = () => {
+    hapticService.mediumTap();
+    useGameStore.getState().resetGame();
   };
 
   const handleNote = () => {
@@ -31,112 +32,67 @@ export const Controls: React.FC = () => {
     hint();
   };
 
-  const ControlButton = ({
-    icon,
-    label,
-    onPress,
-    isActive = false,
-    badge,
-  }: {
-    icon: any;
-    label: string;
-    onPress: () => void;
-    isActive?: boolean;
-    badge?: string;
-  }) => {
-    const getIconContainerStyle = (pressed: boolean) => {
-      const baseStyle: any = {
-        ...styles.iconContainer,
-        ...(isActive && styles.activeIcon),
-        transform: [{ scale: pressed ? 0.9 : 1 }],
-      };
-
-      // Add glow for active state
-      if (isActive) {
-        if (Platform.OS === "ios") {
-          baseStyle.shadowColor = theme.colors.primary;
-          baseStyle.shadowOffset = { width: 0, height: 0 };
-          baseStyle.shadowOpacity = 0.5;
-          baseStyle.shadowRadius = 10;
-        } else {
-          baseStyle.elevation = 8;
-        }
-      }
-
-      return baseStyle;
-    };
-
-    return (
-      <Pressable style={styles.button} onPress={onPress}>
-        {({ pressed }) => (
-          <>
-            <View style={getIconContainerStyle(pressed)}>
-              {icon}
-              {badge && (
-                <View style={styles.badge}>
-                  <ThemedText
-                    variant="caption"
-                    style={{ fontSize: 10, color: "#FFF" }}
-                  >
-                    {badge}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-            <ThemedText variant="caption" style={styles.label}>
-              {label}
-            </ThemedText>
-          </>
-        )}
-      </Pressable>
-    );
+  const handleSettings = () => {
+    hapticService.lightTap();
+    setIsSettingsVisible(true);
   };
 
+  const ControlButton = ({
+    icon,
+    onPress,
+    isActive = false,
+    hasIndicator = false,
+    iconComponent,
+  }: {
+    icon?: string;
+    onPress: () => void;
+    isActive?: boolean;
+    hasIndicator?: boolean;
+    iconComponent?: React.ReactNode;
+  }) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.button,
+        pressed && { opacity: 0.7, transform: [{ scale: 0.9 }] },
+      ]}
+      onPress={onPress}
+    >
+      <View style={styles.iconWrapper}>
+        {iconComponent || (
+          <MaterialCommunityIcons
+            name={icon as any}
+            size={24}
+            color={isActive ? theme.colors.primary : theme.colors.textSecondary}
+          />
+        )}
+        {hasIndicator && <View style={styles.indicator} />}
+      </View>
+    </Pressable>
+  );
+
   return (
-    <View style={styles.container}>
-      <ControlButton
-        label="বাতিল"
-        icon={
-          <Ionicons name="arrow-undo" size={24} color={theme.colors.text} />
-        }
-        onPress={handleUndo}
+    <>
+      <View style={styles.container}>
+        <ControlButton icon="cog-outline" onPress={handleSettings} />
+        <ControlButton icon="refresh" onPress={handleReset} />
+        <ControlButton
+          icon="pencil-outline"
+          onPress={handleNote}
+          isActive={isNoteMode}
+        />
+        <ControlButton icon="undo" onPress={handleUndo} />
+        <ControlButton
+          icon="lightbulb-outline"
+          onPress={handleHint}
+          hasIndicator={true}
+        />
+      </View>
+
+      <GameSettingsModal
+        visible={isSettingsVisible}
+        onClose={() => setIsSettingsVisible(false)}
       />
-      <ControlButton
-        label="মুছুন"
-        icon={
-          <MaterialCommunityIcons
-            name="eraser"
-            size={24}
-            color={theme.colors.text}
-          />
-        }
-        onPress={handleErase}
-      />
-      <ControlButton
-        label="নোট"
-        isActive={isNoteMode}
-        badge={isNoteMode ? "চালু" : undefined}
-        icon={
-          <MaterialCommunityIcons
-            name="pencil"
-            size={24}
-            color={isNoteMode ? "#FFF" : theme.colors.text}
-          />
-        }
-        onPress={handleNote}
-      />
-      <ControlButton
-        label="ইঙ্গিত"
-        icon={
-          <MaterialCommunityIcons
-            name="lightbulb-on"
-            size={24}
-            color={theme.colors.text}
-          />
-        }
-        onPress={handleHint}
-      />
-    </View>
+    </>
   );
 };
 
@@ -146,39 +102,25 @@ const createStyles = (theme: any) =>
       flexDirection: "row",
       justifyContent: "space-around",
       width: "100%",
-      marginVertical: theme.spacing.lg,
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+      backgroundColor: theme.colors.background,
     },
     button: {
-      alignItems: "center",
-      gap: theme.spacing.xs,
+      padding: 12,
     },
-    iconContainer: {
-      width: 56,
-      height: 56,
-      borderRadius: theme.radius.round,
-      backgroundColor: theme.colors.surface,
-      justifyContent: "center",
-      alignItems: "center",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
-      elevation: 2,
+    iconWrapper: {
+      position: "relative",
     },
-    activeIcon: {
-      backgroundColor: theme.colors.primary,
-    },
-    badge: {
+    indicator: {
       position: "absolute",
-      top: -4,
-      right: -4,
-      backgroundColor: theme.colors.error,
-      borderRadius: 8,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-    },
-    label: {
-      color: theme.colors.textSecondary,
-      fontSize: 12,
+      top: -2,
+      right: -2,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: theme.colors.primary,
     },
   });

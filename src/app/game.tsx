@@ -1,21 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
-import { BackHandler, StyleSheet, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { BackHandler, Pressable, StyleSheet, View } from "react-native";
 import { Board } from "../components/game/Board";
 import { Controls } from "../components/game/Controls";
 import { NumberPad } from "../components/game/NumberPad";
 import { PauseModal } from "../components/game/PauseModal";
 import { WinModal } from "../components/game/WinModal";
-import { Header } from "../components/ui/Header";
 import { ThemedText } from "../components/ui/ThemedText";
 import { useGameStore } from "../store/gameStore";
 import { useTheme } from "../styles/ThemeContext";
 import { toBangla } from "../utils/bangla";
+import hapticService from "../utils/hapticService";
+
+type InputMode = "numpad" | "single";
 
 export default function GameScreen() {
   const { theme } = useTheme();
   const router = useRouter();
+  const [inputMode, setInputMode] = useState<InputMode>("numpad");
   const {
     status,
     difficulty,
@@ -26,6 +29,8 @@ export default function GameScreen() {
     resumeGame,
     resetGame,
     startGame,
+    setSelectedNumber,
+    selectedNumber,
   } = useGameStore();
 
   const styles = createStyles(theme);
@@ -59,64 +64,124 @@ export default function GameScreen() {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${toBangla(mins.toString().padStart(2, "0"))}:${toBangla(secs.toString().padStart(2, "0"))}`;
+    return `${toBangla(mins.toString().padStart(2, "0"))}মি${toBangla(secs.toString().padStart(2, "0"))}সে`;
   };
 
   const getDifficultyLabel = (diff: string) => {
     switch (diff) {
       case "Easy":
-        return "সহজ";
+        return "সহজ স্তর";
       case "Medium":
-        return "মাঝারি";
+        return "মাঝারি স্তর";
       case "Hard":
-        return "কঠিন";
+        return "কঠিন স্তর";
       case "Expert":
-        return "বিশেষজ্ঞ";
+        return "বিশেষজ্ঞ স্তর";
       default:
         return diff;
     }
   };
 
+  const handleBack = () => {
+    hapticService.lightTap();
+    pauseGame();
+  };
+
+  const handlePause = () => {
+    hapticService.lightTap();
+    pauseGame();
+  };
+
   return (
     <View style={styles.container}>
-      <Header
-        title={formatTime(timeElapsed)}
-        showBack={true}
-        rightAction={
-          <Ionicons
-            name="pause-circle"
-            size={32}
-            color={theme.colors.primary}
-            onPress={pauseGame}
-          />
-        }
-      />
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable onPress={handleBack} style={styles.headerButton}>
+          <Ionicons name="chevron-back" size={28} color={theme.colors.text} />
+        </Pressable>
 
-      <View style={styles.infoBar}>
-        <ThemedText variant="caption" color={theme.colors.textSecondary}>
-          {getDifficultyLabel(difficulty)}
-        </ThemedText>
-        <View style={styles.mistakes}>
-          <ThemedText variant="caption" color={theme.colors.error}>
-            ভুল: {toBangla(mistakes)}/৩
+        <View style={styles.headerCenter}>
+          <ThemedText variant="caption" color={theme.colors.textSecondary}>
+            {getDifficultyLabel(difficulty)}
+          </ThemedText>
+          <ThemedText variant="h2" weight="bold">
+            {formatTime(timeElapsed)}
           </ThemedText>
         </View>
+
+        <Pressable onPress={handlePause} style={styles.headerButton}>
+          <View style={styles.pauseIcon}>
+            <Ionicons name="pause" size={18} color={theme.colors.text} />
+          </View>
+        </Pressable>
       </View>
 
+      {/* Board */}
       <View style={styles.boardContainer}>
-        <Board />
+        <Board inputMode={inputMode} />
       </View>
 
-      <View style={styles.controlsContainer}>
-        <Controls />
-        <NumberPad />
+      {/* Input Mode Tabs */}
+      <View style={styles.inputTabs}>
+        <Pressable
+          style={[
+            styles.inputTab,
+            inputMode === "numpad" && styles.inputTabActive,
+          ]}
+          onPress={() => setInputMode("numpad")}
+        >
+          <ThemedText
+            variant="body"
+            weight={inputMode === "numpad" ? "bold" : "regular"}
+            color={
+              inputMode === "numpad"
+                ? theme.colors.text
+                : theme.colors.textSecondary
+            }
+          >
+            নাম্বার প্যাড
+          </ThemedText>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.inputTab,
+            inputMode === "single" && styles.inputTabActive,
+          ]}
+          onPress={() => setInputMode("single")}
+        >
+          <ThemedText
+            variant="body"
+            weight={inputMode === "single" ? "bold" : "regular"}
+            color={
+              inputMode === "single"
+                ? theme.colors.text
+                : theme.colors.textSecondary
+            }
+          >
+            একক সংখ্যা
+          </ThemedText>
+        </Pressable>
       </View>
 
+      {/* Number Pad */}
+      <View style={styles.numberPadContainer}>
+        <NumberPad inputMode={inputMode} />
+      </View>
+
+      {/* Bottom Controls */}
+      <Controls />
+
+      {/* Modals */}
       <PauseModal
         visible={status === "paused"}
         onResume={resumeGame}
-        onRestart={resetGame}
-        onHome={() => router.replace("/home")}
+        onRestart={() => {
+          resetGame();
+        }}
+        onHome={() => {
+          useGameStore.getState().quitGame();
+          router.replace("/home");
+        }}
         timeElapsed={timeElapsed}
       />
 
@@ -124,10 +189,14 @@ export default function GameScreen() {
         visible={status === "won"}
         timeElapsed={timeElapsed}
         mistakes={mistakes}
+        difficulty={difficulty}
         onNewGame={() => {
           startGame(difficulty);
         }}
-        onHome={() => router.replace("/home")}
+        onHome={() => {
+          useGameStore.getState().quitGame();
+          router.replace("/home");
+        }}
       />
     </View>
   );
@@ -139,21 +208,52 @@ const createStyles = (theme: any) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    infoBar: {
+    header: {
       flexDirection: "row",
-      justifyContent: "space-between",
-      paddingHorizontal: theme.spacing.lg,
-      marginBottom: theme.spacing.md,
-    },
-    mistakes: {},
-    boardContainer: {
-      paddingHorizontal: theme.spacing.md,
       alignItems: "center",
-      marginBottom: theme.spacing.md,
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
     },
-    controlsContainer: {
-      paddingHorizontal: theme.spacing.md,
+    headerButton: {
+      padding: 8,
+    },
+    headerCenter: {
+      alignItems: "center",
+    },
+    pauseIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 2,
+      borderColor: theme.colors.textSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    boardContainer: {
+      paddingHorizontal: 16,
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    inputTabs: {
+      flexDirection: "row",
+      marginHorizontal: 24,
+      marginBottom: 16,
+      backgroundColor: theme.colors.surfaceLight || theme.colors.surface,
+      borderRadius: 8,
+      padding: 4,
+    },
+    inputTab: {
       flex: 1,
-      justifyContent: "flex-start",
+      paddingVertical: 10,
+      alignItems: "center",
+      borderRadius: 6,
+    },
+    inputTabActive: {
+      backgroundColor: theme.colors.surface,
+    },
+    numberPadContainer: {
+      flex: 1,
+      justifyContent: "center",
     },
   });

@@ -27,11 +27,13 @@ interface GameActions {
   quitGame: () => void;
   tick: () => void;
   setNoteMode: (active: boolean) => void;
+  setSelectedNumber: (num: CellValue | null) => void;
 }
 
 interface ExtendedGameState extends GameState {
   selectedCell: { row: number; col: number } | null;
   isNoteMode: boolean;
+  selectedNumber: CellValue | null;
 }
 
 const INITIAL_STATE: ExtendedGameState = {
@@ -47,6 +49,7 @@ const INITIAL_STATE: ExtendedGameState = {
   historyIndex: -1,
   selectedCell: null,
   isNoteMode: false,
+  selectedNumber: null,
 };
 
 export const useGameStore = create<ExtendedGameState & GameActions>()(
@@ -76,6 +79,8 @@ export const useGameStore = create<ExtendedGameState & GameActions>()(
       selectCell: (row, col) => set({ selectedCell: { row, col } }),
 
       setNoteMode: (active) => set({ isNoteMode: active }),
+
+      setSelectedNumber: (num) => set({ selectedNumber: num }),
 
       toggleNote: () => {
         // Play note toggle sound & haptic

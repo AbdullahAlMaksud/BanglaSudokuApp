@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { Cell as CellType } from "../../features/sudoku/types";
 import { useTheme } from "../../styles/ThemeContext";
 import { toBangla } from "../../utils/bangla";
@@ -10,6 +10,7 @@ interface CellProps {
   cell: CellType;
   isSelected: boolean;
   isSameNumber: boolean;
+  isHighlighted: boolean;
   onPress: () => void;
 }
 
@@ -17,6 +18,7 @@ export const Cell: React.FC<CellProps> = ({
   cell,
   isSelected,
   isSameNumber,
+  isHighlighted,
   onPress,
 }) => {
   const { theme } = useTheme();
@@ -27,19 +29,21 @@ export const Cell: React.FC<CellProps> = ({
     onPress();
   };
 
+  const colors = theme.colors as any;
+
   const getBackgroundColor = () => {
-    if (isSelected) return theme.colors.primary;
-    if (cell.isValid === false) return theme.colors.error + "40";
-    if (isSameNumber && cell.value !== null)
-      return theme.colors.primaryLight + "40";
-    return theme.colors.surface;
+    if (isSelected) return colors.primary;
+    if (cell.isValid === false) return colors.error + "30";
+    if (isHighlighted) return colors.cellHighlight || colors.highlight;
+    if (isSameNumber && cell.value !== null) return colors.primary + "20";
+    return colors.boardBackground || colors.surface;
   };
 
   const getTextColor = () => {
     if (isSelected) return "#FFFFFF";
-    if (cell.isValid === false) return theme.colors.error;
-    if (cell.isFixed) return theme.colors.text;
-    return theme.colors.primary;
+    if (cell.isValid === false) return colors.error;
+    if (cell.isFixed) return colors.textSecondary;
+    return colors.text;
   };
 
   const getCellStyle = (pressed: boolean) => {
@@ -49,26 +53,17 @@ export const Cell: React.FC<CellProps> = ({
       transform: [{ scale: pressed ? 0.95 : 1 }],
     };
 
-    // Add glow effect for selected cell
-    if (isSelected) {
-      if (Platform.OS === "ios") {
-        baseStyle.shadowColor = theme.colors.primary;
-        baseStyle.shadowOffset = { width: 0, height: 0 };
-        baseStyle.shadowOpacity = 0.5;
-        baseStyle.shadowRadius = 8;
-      } else {
-        baseStyle.elevation = 6;
-      }
-    }
+    // Cyan border for 3x3 box boundaries
+    const isRightBorder = (cell.col + 1) % 3 === 0 && cell.col !== 8;
+    const isBottomBorder = (cell.row + 1) % 3 === 0 && cell.row !== 8;
 
-    // Border styles for grid
-    if ((cell.col + 1) % 3 === 0 && cell.col !== 8) {
+    if (isRightBorder) {
       baseStyle.borderRightWidth = 2;
-      baseStyle.borderRightColor = theme.colors.text;
+      baseStyle.borderRightColor = colors.primary;
     }
-    if ((cell.row + 1) % 3 === 0 && cell.row !== 8) {
+    if (isBottomBorder) {
       baseStyle.borderBottomWidth = 2;
-      baseStyle.borderBottomColor = theme.colors.text;
+      baseStyle.borderBottomColor = colors.primary;
     }
 
     return baseStyle;
@@ -81,8 +76,8 @@ export const Cell: React.FC<CellProps> = ({
     >
       {cell.value !== null ? (
         <ThemedText
-          variant="h2"
-          weight={cell.isFixed ? "bold" : "regular"}
+          variant="h3"
+          weight={cell.isFixed ? "regular" : "bold"}
           style={{ color: getTextColor() }}
         >
           {toBangla(cell.value)}
@@ -96,9 +91,9 @@ export const Cell: React.FC<CellProps> = ({
               style={{
                 width: "33%",
                 textAlign: "center",
-                fontSize: 8,
+                fontSize: 7,
                 color: cell.notes.includes(num)
-                  ? theme.colors.textSecondary
+                  ? colors.primary
                   : "transparent",
               }}
             >
@@ -115,10 +110,9 @@ const createStyles = (theme: any) =>
   StyleSheet.create({
     container: {
       width: "11.11%",
-      height: 40,
       aspectRatio: 1,
       borderWidth: 0.5,
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.boardLine || theme.colors.border,
       justifyContent: "center",
       alignItems: "center",
     },

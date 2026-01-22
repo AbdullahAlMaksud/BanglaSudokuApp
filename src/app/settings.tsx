@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, Switch, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Switch, View } from "react-native";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Header } from "../components/ui/Header";
@@ -10,6 +11,7 @@ import { useTheme } from "../styles/ThemeContext";
 
 export default function SettingsScreen() {
   const { theme } = useTheme();
+  const router = useRouter();
   const {
     soundEnabled,
     toggleSound,
@@ -94,6 +96,27 @@ export default function SettingsScreen() {
               size="sm"
             />
           </View>
+        </Card>
+
+        <ThemedText variant="label" style={styles.sectionLabel}>
+          অন্যান্য
+        </ThemedText>
+        <Card padding="lg">
+          <Pressable style={styles.item} onPress={() => router.push("/about")}>
+            <View style={styles.itemLeft}>
+              <View style={styles.iconBox}>
+                <Ionicons name="information-circle" size={20} color={theme.colors.primary} />
+              </View>
+              <ThemedText variant="body" weight="bold">
+                অ্যাপ সম্পর্কে
+              </ThemedText>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={theme.colors.textSecondary}
+            />
+          </Pressable>
         </Card>
 
         <View style={{ marginTop: 40 }}>

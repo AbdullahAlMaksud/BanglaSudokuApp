@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Modal, Platform, StyleSheet, View } from "react-native";
+import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useTheme } from "../../styles/ThemeContext";
 import { toBangla } from "../../utils/bangla";
-import { Button } from "../ui/Button";
+import hapticService from "../../utils/hapticService";
 import { ThemedText } from "../ui/ThemedText";
 
 interface PauseModalProps {
@@ -30,10 +30,26 @@ export const PauseModal: React.FC<PauseModalProps> = ({
     return `${toBangla(mins.toString().padStart(2, "0"))}:${toBangla(secs.toString().padStart(2, "0"))}`;
   };
 
+  const handleResume = () => {
+    hapticService.mediumTap();
+    onResume();
+  };
+
+  const handleRestart = () => {
+    hapticService.mediumTap();
+    onRestart();
+  };
+
+  const handleHome = () => {
+    hapticService.lightTap();
+    onHome();
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.card}>
+          {/* Pause Icon */}
           <View style={styles.iconContainer}>
             <Ionicons name="pause" size={32} color="#FFF" />
           </View>
@@ -42,13 +58,14 @@ export const PauseModal: React.FC<PauseModalProps> = ({
             খেলা থামানো হয়েছে
           </ThemedText>
           <ThemedText variant="body" color={theme.colors.textSecondary}>
-            বিরতি নিন এবং পুনরায় শুরু করুন
+            বিরতি নিন এবং প্রস্তুত হলে পুনরায় শুরু করুন
           </ThemedText>
 
+          {/* Timer */}
           <View style={styles.timerChip}>
             <Ionicons
               name="time-outline"
-              size={16}
+              size={18}
               color={theme.colors.primary}
             />
             <ThemedText variant="h3" weight="bold" color={theme.colors.primary}>
@@ -56,27 +73,43 @@ export const PauseModal: React.FC<PauseModalProps> = ({
             </ThemedText>
           </View>
 
+          {/* Actions */}
           <View style={styles.actions}>
-            <Button
-              title="পুনরায় শুরু করুন"
-              icon={<Ionicons name="play" size={20} color="#FFF" />}
-              onPress={onResume}
-              style={styles.fullBtn}
-            />
-            <Button
-              title="আবার শুরু করুন"
-              variant="secondary"
-              icon={<Ionicons name="refresh" size={20} color={theme.colors.primaryDark} />}
-              onPress={onRestart}
-              style={styles.fullBtn}
-            />
-            <Button
-              title="হোম পেজে যান"
-              variant="ghost"
-              icon={<Ionicons name="home" size={20} color={theme.colors.textSecondary} />}
-              onPress={onHome}
-              style={styles.fullBtn}
-            />
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={handleResume}
+            >
+              <Ionicons name="play" size={20} color="#FFF" />
+              <ThemedText variant="body" weight="bold" color="#FFF">
+                পুনরায় শুরু করুন
+              </ThemedText>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.secondaryButton,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={handleRestart}
+            >
+              <Ionicons name="refresh" size={20} color={theme.colors.text} />
+              <ThemedText variant="body" weight="bold">
+                আবার শুরু করুন
+              </ThemedText>
+            </Pressable>
+
+            <Pressable onPress={handleHome}>
+              <ThemedText
+                variant="body"
+                color={theme.colors.textSecondary}
+                style={styles.linkText}
+              >
+                মেনুতে ফিরে যান
+              </ThemedText>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -88,53 +121,80 @@ const createStyles = (theme: any) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: "rgba(0,0,0,0.7)",
       justifyContent: "center",
       alignItems: "center",
-      padding: theme.spacing.xl,
+      padding: 24,
     },
     card: {
       width: "100%",
       backgroundColor: theme.colors.surface,
-      borderRadius: theme.radius.xl,
-      padding: theme.spacing.xl,
+      borderRadius: 24,
+      padding: 32,
       alignItems: "center",
-      gap: theme.spacing.md,
+      gap: 12,
       ...(Platform.OS === "ios"
         ? {
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.25,
+          shadowOpacity: 0.3,
           shadowRadius: 16,
         }
-        : { elevation: 8 }),
+        : { elevation: 10 }),
     },
     iconContainer: {
-      width: 64,
-      height: 64,
-      borderRadius: theme.radius.round,
+      width: 72,
+      height: 72,
+      borderRadius: 36,
       backgroundColor: theme.colors.primary,
       justifyContent: "center",
       alignItems: "center",
+      marginBottom: 8,
     },
     title: {
-      marginTop: theme.spacing.xs,
+      marginTop: 8,
     },
     timerChip: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      backgroundColor: theme.colors.highlight,
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.xs,
-      borderRadius: theme.radius.md,
-      marginVertical: theme.spacing.sm,
+      backgroundColor: theme.colors.surfaceLight || theme.colors.highlight,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 12,
+      marginVertical: 16,
     },
     actions: {
       width: "100%",
-      gap: theme.spacing.sm,
+      gap: 12,
+      marginTop: 8,
     },
-    fullBtn: {
+    primaryButton: {
       width: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: theme.colors.primary,
+      paddingVertical: 16,
+      borderRadius: 30,
+    },
+    secondaryButton: {
+      width: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: theme.colors.surfaceLight || theme.colors.highlight,
+      paddingVertical: 16,
+      borderRadius: 30,
+    },
+    buttonPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.98 }],
+    },
+    linkText: {
+      marginTop: 8,
+      textAlign: "center",
     },
   });
